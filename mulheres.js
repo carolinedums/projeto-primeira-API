@@ -1,33 +1,92 @@
-const express = require("express")
-const router = express.Router()
-const app = express()
+const express = require("express") // aqui estou iniciando o express
+const router = express.Router() // aqui estou configurando a primeira parte da rota
+const cors =require('cors') // aqui estou trazendo o pacote cors que permite consumir essa api no front-end
+
+const conectaBancoDeDados = require('./bancoDeDados')  // aqui eu estou ligando o banco de dados, ligando ao arquivo banco de dados
+conectaBancoDeDados()   // aqui estou chamando a função que conecta o banco de dados
+
+const Mulher = require('./mulherModel')
+
+const app = express()   // aqui estou iniciado o 
+app.use(express.json())
+app.use(cors())
 
 const porta = 3333
 
-const mulheres = [
-    {
-        nome: 'Caroline Dums',
-        imagem:'https://media.licdn.com/dms/image/D4D03AQFS5x9maxBe7g/profile-displayphoto-shrink_400_400/0/1699907572338?e=1711584000&v=beta&t=HyCGPOQA2sPReIHBi1dCtfHi6ARuDj7tFdk3TUQDdkQ',
-        minibio: 'estudante de desenvolvimento web',
-    },
-    {
-        nome: 'Ada lovelace',
-        imagem: 'https://www.google.com/url?sa=i&url=https%3A%2F%2Frevistagalileu.globo.com%2FSociedade%2FCuriosidade%2Fnoticia%2F2018%2F02%2F10-fatos-sobre-ada-lovelace-que-farao-voce-admira-la-ainda-mais.html&psig=AOvVaw0mQsHf2YEaH2cbLh98_12E&ust=1706381091652000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCNDO2onb-4MDFQAAAAAdAAAAABAE',
-        minibio:'primeira mulher programadora',
-    },
-    {
-        nome: 'Iana Chan',
-        imagem: 'https://bit.ly/3JCXBqP',
-        minibio: 'CEO & Founder da PrograMaria',
+    //GET
+ async function mostraMulheres(request, response){
+    try {
+        const mulheresVindasDoBancoDeDados = await Mulher.find()
+    } catch(erro){
+        console.log(erro)
     }
-]
 
-function mostraMulheres(request, response){
-    response.json(mulheres)
+}
+    //POST
+ async function criaMulher(request, response){
+    const novaMulher = new  Mulher({
+        nome: request.body.nome,
+        imagem:request.body.imagem,
+        minibio: request.body.minibio,
+        citacao: request.body.citacao
+    })
+
+    try {
+        const mulherCriada = await novaMulher.save()
+        response.status(201).json(mulherCriada)
+    } catch (erro){
+        console.log(erro)
+    }
 }
 
+//PATCH
+async function  corrigeMulher(request, response){
+    try {
+        const mulherEncontrada = await Mulher.findById(request.params.id)
+
+        if (request.body.nome){
+            mulherEncontrada.nome = request.body.nome
+        }
+    
+        if (request.body.minibio){
+            mulherEncontrada.minibio = request.body.minibio
+        }
+    
+        if (request.body.imagem){
+            mulherEncontrada.imagem = request.body.imagem
+        }
+
+        if (request.body.citacao){
+            mulherEncontrada = request.body.citacao
+        }
+
+        const mulherAtualizadaNoBancoDeDados = await mulherEncontrada.save()
+        response.json(mulherAtualizadaNoBancoDeDados)
+
+    } catch(erro) {
+        console.log(erro)
+    }
+
+}
+
+//DELETE
+ async function deletaMulher(request, response){
+    try {
+        await Mulher.findByIdAndDelete(request.params.id)
+        response.json({mensagem: 'mulher deletada com sucesso!'})
+
+    } catch (erro){
+        console.log (erro)
+    }
+ }
+app.use(router.get('/mulheres', mostraMulheres))    // configurei rota GET/
+app.use(router.post('/mulheres', criaMulher))   //configurei rota
+app.use(router.patch('/mulheres/:id', corrigeMulher)) // configurei a rota patch 
+app.use(router.delete('/mulheres/:id', deletaMulher))  // configurada a rota DELETE/MULHERES
+
+
+    //PORTA
 function mostraPorta() {
    console.log ("servidor criado e rodando ", porta)
 }
-app.use(router.get('/mulheres', mostraMulheres))
-app.listen(porta, mostraPorta)
+app.listen(porta, mostraPorta)  // Servidor ouvindo a porta
