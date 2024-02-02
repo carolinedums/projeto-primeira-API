@@ -17,6 +17,7 @@ const porta = 3333
  async function mostraMulheres(request, response){
     try {
         const mulheresVindasDoBancoDeDados = await Mulher.find()
+        response.json(mulheresVindasDoBancoDeDados)
     } catch(erro){
         console.log(erro)
     }
